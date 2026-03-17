@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'mispantallas/pantalla1.dart';
+import 'mispantallas/pantalla2.dart';
+import 'mispantallas/pantalla3.dart';
+import 'mispantallas/pantalla4.dart';
+import 'mispantallas/pantalla5.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,116 +12,243 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Skate Shop',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.red,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MainStoreController(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MainStoreController extends StatefulWidget {
+  const MainStoreController({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainStoreController> createState() => _MainStoreControllerState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MainStoreControllerState extends State<MainStoreController> {
+  bool isMenuOpen = false;
+  int currentIndex = 0; // 0: Feed, 1: Patinetas, etc.
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  String _getCurrentTitle() {
+    switch (currentIndex) {
+      case 0:
+        return "ZON\nSKATE SHOP";
+      case 1:
+        return "Patinetas";
+      case 2:
+        return "Pantalones";
+      case 3:
+        return "Camisetas";
+      case 4:
+        return "Sudaderas";
+      case 5:
+        return "Tenis";
+      default:
+        return "Skate Shop";
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      appBar: _customAppBar(_getCurrentTitle()),
+      body: Stack(
+        children: [
+          // Main content area
+          IndexedStack(
+            index: currentIndex,
+            children: <Widget>[
+              _buildFeedScreen(),
+              buildPatinetasScreen(),
+              buildPantalonesScreen(),
+              buildCamisetasScreen(),
+              buildSudaderasScreen(),
+              buildTenisScreen(),
+            ],
+          ),
+
+          // Dark overlay when menu is open
+          if (isMenuOpen)
+            GestureDetector(
+              onTap: () => setState(() => isMenuOpen = false),
+              child: Container(color: Colors.black.withOpacity(0.5)),
             ),
+
+          // Side menu
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            left: isMenuOpen ? 0 : -MediaQuery.of(context).size.width * 0.75,
+            top: 0,
+            bottom: 0,
+            child: _buildSideMenu(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PreferredSizeWidget _customAppBar(String title) {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      leading: IconButton(
+        icon: const Icon(Icons.menu, color: Colors.black),
+        onPressed: () => setState(() => isMenuOpen = !isMenuOpen),
+      ),
+      title: Text(
+        title,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+          fontSize: 24,
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black),
+          onPressed: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeedScreen() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: <Widget>[
+          const SizedBox(height: 10),
+          _buildNewArrivalsBanner(),
+          const SizedBox(height: 40),
+          _buildProductCard("ELEMENT", 'https://raw.githubusercontent.com/Alex-Villagrana/imagen_act11/refs/heads/main/elementsakte.jpg', const Color(0xFFE3F2FD)),
+          const SizedBox(height: 20),
+          _buildProductCard("SANTA CRUZ", 'https://raw.githubusercontent.com/Alex-Villagrana/imagen_act11/refs/heads/main/santacruzskate.webp', const Color(0xFFFBE9E7)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSideMenu() {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.75,
+      color: const Color(0xFFFFEBEE),
+      child: SafeArea(
+        child: Column(
+          children: <Widget>[
+             Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const Text("MENÚ ★", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => isMenuOpen = false)),
+                ],
+              ),
+            ),
+             const Padding(
+               padding: EdgeInsets.symmetric(horizontal: 16.0),
+               child: TextField(
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.search, color: Colors.red),
+                  hintText: "Buscar",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(15)), borderSide: BorderSide.none),
+                ),
+                         ),
+             ),
+            const SizedBox(height: 20),
+            _menuItem("Inicio", Icons.home, 0),
+            _menuItem("Patinetas", Icons.skateboarding, 1),
+            _menuItem("Pantalones", Icons.straighten, 2),
+            _menuItem("Camisetas", Icons.checkroom, 3),
+            _menuItem("Sudaderas", Icons.waves, 4),
+            _menuItem("Tenis", Icons.ice_skating, 5),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+
+  Widget _menuItem(String title, IconData icon, int index) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.red),
+      title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+      trailing: const Text("+", style: TextStyle(color: Colors.red, fontSize: 22, fontWeight: FontWeight.bold)),
+      onTap: () {
+        setState(() {
+          currentIndex = index;
+          isMenuOpen = false;
+        });
+      },
+    );
+  }
+
+  Widget _buildNewArrivalsBanner() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.red.shade100,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "NUEVOS\nPRODUCTOS",
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios,
+            color: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductCard(String title, String imageUrl, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(15.0),
+            child: Image.network(
+              imageUrl,
+              height: 350,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
